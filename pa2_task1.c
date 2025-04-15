@@ -42,7 +42,8 @@ int server_port = 12345;
 int num_client_threads = DEFAULT_CLIENT_THREADS;
 int num_requests = 1000000;
 
-typedef struct {
+typedef struct 
+{
     int epoll_fd;
     int socket_fd;
     long long total_rtt;
@@ -53,7 +54,8 @@ typedef struct {
     struct sockaddr_in server_addr;
 } client_thread_data_t;
 
-void *client_thread_func(void *arg) {
+void *client_thread_func(void *arg) 
+{
     client_thread_data_t *data = (client_thread_data_t *)arg;
     struct epoll_event event, events[MAX_EVENTS];
     struct timeval start, end;
@@ -64,15 +66,18 @@ void *client_thread_func(void *arg) {
 
     event.events = EPOLLIN;
     event.data.fd = data->socket_fd;
-    if (epoll_ctl(data->epoll_fd, EPOLL_CTL_ADD, data->socket_fd, &event) < 0) {
+    if (epoll_ctl(data->epoll_fd, EPOLL_CTL_ADD, data->socket_fd, &event) < 0) 
+    {
         perror("epoll_ctl failed");
         exit(EXIT_FAILURE);
     }
 
-    for (int i = 0; i < num_requests; i++) {
+    for (int i = 0; i < num_requests; i++) 
+    {
         gettimeofday(&start, NULL);
         if (sendto(data->socket_fd, send_buf, MESSAGE_SIZE, 0,
-                   (struct sockaddr *)&data->server_addr, addrlen) < 0) {
+                   (struct sockaddr *)&data->server_addr, addrlen) < 0) 
+        {
             perror("sendto failed");
             exit(EXIT_FAILURE);
         }
@@ -81,7 +86,8 @@ void *client_thread_func(void *arg) {
         epoll_wait(data->epoll_fd, events, MAX_EVENTS, -1);
         int recv_len = recvfrom(data->socket_fd, recv_buf, MESSAGE_SIZE, 0,
                                 NULL, NULL);
-        if (recv_len > 0) {
+        if (recv_len > 0) 
+        {
             gettimeofday(&end, NULL);
             long long rtt = (end.tv_sec - start.tv_sec) * 1000000LL +
                             (end.tv_usec - start.tv_usec);
@@ -97,17 +103,20 @@ void *client_thread_func(void *arg) {
     return NULL;
 }
 
-void run_client() {
+void run_client() 
+{
     pthread_t threads[num_client_threads];
     client_thread_data_t thread_data[num_client_threads];
 
     for (int i = 0; i < num_client_threads; i++) {
-        if ((thread_data[i].socket_fd = socket(AF_INET, SOCK_DGRAM, 0)) < 0) {
+        if ((thread_data[i].socket_fd = socket(AF_INET, SOCK_DGRAM, 0)) < 0) 
+        {
             perror("socket failed");
             exit(EXIT_FAILURE);
         }
 
-        if ((thread_data[i].epoll_fd = epoll_create1(0)) < 0) {
+        if ((thread_data[i].epoll_fd = epoll_create1(0)) < 0) 
+        {
             perror("epoll_create1 failed");
             exit(EXIT_FAILURE);
         }
@@ -119,7 +128,8 @@ void run_client() {
 
         thread_data[i].server_addr.sin_family = AF_INET;
         thread_data[i].server_addr.sin_port = htons(server_port);
-        if (inet_pton(AF_INET, server_ip, &thread_data[i].server_addr.sin_addr) <= 0) {
+        if (inet_pton(AF_INET, server_ip, &thread_data[i].server_addr.sin_addr) <= 0) 
+        {
             perror("inet_pton failed");
             exit(EXIT_FAILURE);
         }
@@ -133,7 +143,8 @@ void run_client() {
     long total_rx = 0;
     float total_request_rate = 0;
 
-    for (int i = 0; i < num_client_threads; i++) {
+    for (int i = 0; i < num_client_threads; i++) 
+    {
         pthread_join(threads[i], NULL);
         total_rtt += thread_data[i].total_rtt;
         total_messages += thread_data[i].total_messages;
@@ -149,38 +160,44 @@ void run_client() {
     printf("Packets Lost: %ld\n", total_tx - total_rx);
 }
 
-void run_server() {
+void run_server() 
+{
     int server_fd, epoll_fd;
     struct epoll_event event, events[MAX_EVENTS];
     struct sockaddr_in server_addr, client_addr;
     socklen_t client_len = sizeof(client_addr);
     char buffer[MESSAGE_SIZE];
 
-    if ((server_fd = socket(AF_INET, SOCK_DGRAM, 0)) < 0) {
+    if ((server_fd = socket(AF_INET, SOCK_DGRAM, 0)) < 0) 
+    {
         perror("socket failed");
         exit(EXIT_FAILURE);
     }
 
     server_addr.sin_family = AF_INET;
     server_addr.sin_port = htons(server_port);
-    if (inet_pton(AF_INET, server_ip, &server_addr.sin_addr) <= 0) {
+    if (inet_pton(AF_INET, server_ip, &server_addr.sin_addr) <= 0) 
+    {
         perror("inet_pton failed");
         exit(EXIT_FAILURE);
     }
 
-    if (bind(server_fd, (struct sockaddr *)&server_addr, sizeof(server_addr)) < 0) {
+    if (bind(server_fd, (struct sockaddr *)&server_addr, sizeof(server_addr)) < 0) 
+    {
         perror("bind failed");
         exit(EXIT_FAILURE);
     }
 
-    if ((epoll_fd = epoll_create1(0)) < 0) {
+    if ((epoll_fd = epoll_create1(0)) < 0) 
+    {
         perror("epoll_create1 failed");
         exit(EXIT_FAILURE);
     }
 
     event.events = EPOLLIN;
     event.data.fd = server_fd;
-    if (epoll_ctl(epoll_fd, EPOLL_CTL_ADD, server_fd, &event) < 0) {
+    if (epoll_ctl(epoll_fd, EPOLL_CTL_ADD, server_fd, &event) < 0) 
+    {
         perror("epoll_ctl failed");
         exit(EXIT_FAILURE);
     }
@@ -189,16 +206,19 @@ void run_server() {
 
     while (1) {
         int num_events = epoll_wait(epoll_fd, events, MAX_EVENTS, -1);
-        for (int i = 0; i < num_events; i++) {
+        for (int i = 0; i < num_events; i++) 
+        {
             int bytes_read = recvfrom(server_fd, buffer, MESSAGE_SIZE, 0,
                                       (struct sockaddr *)&client_addr, &client_len);
-            if (bytes_read < 0) {
+            if (bytes_read < 0) 
+            {
                 perror("recvfrom failed");
                 continue;
             }
 
             if (sendto(server_fd, buffer, bytes_read, 0,
-                       (struct sockaddr *)&client_addr, client_len) < 0) {
+                       (struct sockaddr *)&client_addr, client_len) < 0) 
+            {
                 perror("sendto failed");
                 continue;
             }
@@ -206,18 +226,24 @@ void run_server() {
     }
 }
 
-int main(int argc, char *argv[]) {
-    if (argc > 1 && strcmp(argv[1], "server") == 0) {
+int main(int argc, char *argv[]) 
+{
+    if (argc > 1 && strcmp(argv[1], "server") == 0) 
+    {
         if (argc > 2) server_ip = argv[2];
         if (argc > 3) server_port = atoi(argv[3]);
         run_server();
-    } else if (argc > 1 && strcmp(argv[1], "client") == 0) {
+    } 
+    else if (argc > 1 && strcmp(argv[1], "client") == 0) 
+    {
         if (argc > 2) server_ip = argv[2];
         if (argc > 3) server_port = atoi(argv[3]);
         if (argc > 4) num_client_threads = atoi(argv[4]);
         if (argc > 5) num_requests = atoi(argv[5]);
         run_client();
-    } else {
+    } 
+    else 
+    {
         printf("Usage: %s <server|client> [server_ip server_port num_client_threads num_requests]\n", argv[0]);
     }
     return 0;
